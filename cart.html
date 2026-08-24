@@ -21,6 +21,10 @@
       <h2>Keranjang</h2>
     </div>
     <div class="page-pad" style="padding-bottom:40px;">
+      <div class="cart-select-all" id="cart-select-all" style="display:none;">
+        <button class="cart-check" id="select-all-check" type="button" onclick="toggleSelectAll()" aria-label="Pilih semua produk"></button>
+        <span>Pilih Semua</span>
+      </div>
       <div id="cart-list"></div>
       <div id="cart-empty" class="empty-state" style="display:none;">
         <div class="ic">🛒</div>
@@ -121,22 +125,33 @@ function renderCart(){
   const list = document.getElementById("cart-list");
   const emptyEl = document.getElementById("cart-empty");
   const summary = document.getElementById("cart-summary");
+  const selectAllWrap = document.getElementById("cart-select-all");
   const entries = Object.entries(cart);
+
   if(entries.length===0){
     list.innerHTML = "";
     emptyEl.style.display = "block";
     summary.style.display = "none";
+    selectAllWrap.style.display = "none";
     return;
   }
+
   emptyEl.style.display = "none";
   summary.style.display = "block";
+  selectAllWrap.style.display = "flex";
+
+  const validKeys = new Set(entries.map(([key])=>key));
+  [...selectedCartKeys].forEach(key=>{ if(!validKeys.has(key)) selectedCartKeys.delete(key); });
+
   list.innerHTML = entries.map(([key,qty])=>{
     const line = getCartLine(key);
     if(!line) return "";
     const p = line.product;
     const variantLabel = line.variantName ? `<div class="ci-variant">Variasi: ${line.variantName}</div>` : "";
+    const checked = selectedCartKeys.has(key);
     return `
-    <div class="cart-item">
+    <div class="cart-item ${checked ? 'selected' : ''}">
+      <button class="cart-check ${checked ? 'checked' : ''}" type="button" onclick="toggleCartSelection('${key}')" aria-label="${checked ? 'Batalkan pilihan' : 'Pilih produk'}">${checked ? '✓' : ''}</button>
       <div class="ci-thumb"><img src="${p.img}" alt="${p.name}" class="ci-img"></div>
       <div class="ci-info">
         <div class="ci-name">${p.name}</div>
@@ -150,16 +165,31 @@ function renderCart(){
       </div>
     </div>`;
   }).join("");
-  const items = totalItems();
-  document.getElementById("cart-count-label").textContent = items + " item";
-  document.getElementById("cart-subtotal").textContent = rupiah(totalPrice());
-  document.getElementById("cart-total").textContent = rupiah(totalPrice());
+
+  const allSelected = entries.length > 0 && entries.every(([key])=>selectedCartKeys.has(key));
+  const selectAllCheck = document.getElementById("select-all-check");
+  selectAllCheck.classList.toggle("checked", allSelected);
+  selectAllCheck.textContent = allSelected ? "✓" : "";
+
+  const items = selectedItems();
+  document.getElementById("cart-count-label").textContent = items + " item dipilih";
+  document.getElementById("cart-subtotal").textContent = rupiah(selectedPrice());
+  document.getElementById("cart-total").textContent = rupiah(selectedPrice());
 }
 
 /* ============ CHECKOUT LANGSUNG (modal) ============ */
 function openDirectModal(){
+  const selected = selectedCartEntries();
   if(totalItems()===0){
     showToast("Keranjang kamu masih kosong");
+    return;
+  }
+  if(selected.length===0){
+    showToast("Pilih 1 produk untuk Checkout Langsung");
+    return;
+  }
+  if(selected.length>1){
+    showToast("Checkout Langsung hanya bisa 1 produk. Pilih satu produk saja.", 3200);
     return;
   }
   document.getElementById("direct-modal-title").textContent = "Data Pemesan";
@@ -192,7 +222,7 @@ function submitDirectForm(){
   document.getElementById("direct-modal-title").textContent = "Pembayaran";
   document.getElementById("direct-step-form").style.display = "none";
   document.getElementById("direct-step-payment").style.display = "block";
-  document.getElementById("direct-pay-total").textContent = rupiah(totalPrice());
+  document.getElementById("direct-pay-total").textContent = rupiah(selectedPrice());
   document.getElementById("direct-pay-info").textContent = username + " • " + wa;
 }
 

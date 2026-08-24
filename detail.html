@@ -185,6 +185,7 @@ function confirmVariantAction(){
   saveCart();
 
   if(variantAction === "buy"){
+    try{ sessionStorage.setItem("avstore_direct_key", key); }catch(e){}
     window.location.href = "cart.html";
   }else{
     /* kembali ke menu; cart-bar otomatis muncul dengan jumlah item */
