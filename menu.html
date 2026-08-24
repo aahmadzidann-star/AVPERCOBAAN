@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order — AV OFFICIAL STORE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ MENU / ORDER ============ -->
+  <section class="view active" id="view-menu">
+    <div class="topbar">
+      <a class="icon-btn" href="index.html">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    <h2>Order</h2>
+      <button class="icon-btn" onclick="openCS()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3.1 1.3 4.8 1.3z"/></svg>
+      </button>
+      <a class="icon-btn badge-cart" href="cart.html">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 2L3 7v13a2 2 0 002 2h14a2 2 0 002-2V7l-3-5H6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M3 7h18M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="cart-dot" id="cart-dot" style="display:none;">0</span>
+      </a>
+    </div>
+
+    <div class="banner-wrap">
+      <div class="banner-slider" id="banner-slider">
+        <div class="banner-track" id="banner-track">
+          <img src="assets/banner1.png" alt="Promo 1" class="banner-img">
+          <img src="assets/banner2.png" alt="Promo 2" class="banner-img">
+          <img src="assets/banner3.png" alt="Promo 3" class="banner-img">
+        </div>
+        <div class="banner-dots" id="banner-dots"></div>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+        <input type="text" id="search-input" placeholder="Cari nama produk..." oninput="onSearchInput(this.value)">
+        <button id="search-clear" onclick="clearSearch()" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="product-grid"></div>
+    <div id="empty-menu" class="empty-state" style="display:none;">
+      <div class="ic">🔍</div>
+      <div id="empty-menu-text">Belum ada produk di kategori ini.</div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+  <div class="cart-bar" id="cart-bar">
+    <div class="cart-bar-inner">
+      <div class="ci">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M6 2L3 7v13a2 2 0 002 2h14a2 2 0 002-2V7l-3-5H6z" stroke-linejoin="round"/><path d="M3 7h18M16 11a4 4 0 01-8 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="ctext">
+        <div class="l1" id="bar-count">0 item dipilih</div>
+        <div class="l2" id="bar-total">Rp0</div>
+      </div>
+      <a class="cbtn" href="cart.html">
+        Keranjang
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/cart.js"></script>
+<script>
+/* ============ STATE ============ */
+let currentTab = "Semua";
+let searchQuery = "";
+
+/* ============ TABS ============ */
+function renderTabs(){
+  const el = document.getElementById("tabs");
+  el.innerHTML = CATEGORIES.map(c=>
+    `<button class="tab ${c===currentTab?'active':''}" onclick="setTab('${c}')">${c}</button>`
+  ).join("");
+}
+function setTab(c){
+  currentTab = c;
+  renderTabs();
+  renderGrid();
+}
+
+function onSearchInput(val){
+  searchQuery = val;
+  document.getElementById("search-clear").style.display = val ? "flex" : "none";
+  renderGrid();
+}
+function clearSearch(){
+  searchQuery = "";
+  document.getElementById("search-input").value = "";
+  document.getElementById("search-clear").style.display = "none";
+  renderGrid();
+}
+
+function renderGrid(){
+  renderTabs();
+  const q = searchQuery.trim().toLowerCase();
+  const list = PRODUCTS.filter(p =>
+    (currentTab==="Semua" || p.category===currentTab) &&
+    (q==="" || p.name.toLowerCase().includes(q))
+  );
+  const grid = document.getElementById("product-grid");
+  const empty = document.getElementById("empty-menu");
+  if(list.length===0){
+    grid.innerHTML = "";
+    document.getElementById("empty-menu-text").textContent = q
+      ? `Produk "${searchQuery}" tidak ditemukan.`
+      : "Belum ada produk di kategori ini.";
+    empty.style.display = "block";
+  } else {
+    empty.style.display = "none";
+    grid.innerHTML = list.map(p=>{
+      return `
+      <div class="p-card p-card-link" onclick="location.href='detail.html?id=${p.id}'">
+        <div class="p-thumb"><img src="${p.img}" alt="${p.name}" class="p-img"></div>
+        <div class="p-name">${p.name}</div>
+        <div class="p-desc">${p.shortDesc}</div>
+        <div class="p-bottom">
+          <span class="p-price">${rupiah(p.price)}</span>
+        </div>
+      </div>`;
+    }).join("");
+  }
+}
+
+/* ============ INIT ============ */
+/* ============ BANNER CAROUSEL ============ */
+(function initBannerSlider(){
+  const slider = document.getElementById("banner-slider");
+  const track = document.getElementById("banner-track");
+  const dotsWrap = document.getElementById("banner-dots");
+  if(!slider || !track) return;
+
+  const originalSlides = Array.from(track.children);
+  const total = originalSlides.length;
+  if(total === 0) return;
+
+  /* Clone slide pertama ke ujung akhir, untuk looping mulus */
+  const firstClone = originalSlides[0].cloneNode(true);
+  track.appendChild(firstClone);
+
+  let index = 0;
+  let autoTimer = null;
+
+  originalSlides.forEach((_, i)=>{
+    const dot = document.createElement("div");
+    dot.className = "dot" + (i===0 ? " active" : "");
+    dot.onclick = ()=> goTo(i);
+    dotsWrap.appendChild(dot);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function update(withTransition){
+    track.style.transition = withTransition ? "transform .45s ease" : "none";
+    track.style.transform = `translateX(-${index*100}%)`;
+    dots.forEach((d,i)=> d.classList.toggle("active", i === index % total));
+  }
+
+  function goTo(i){
+    index = i;
+    update(true);
+
+    if(index === total){
+      setTimeout(()=>{
+        index = 0;
+        update(false);
+      }, 460);
+    }
+    resetAuto();
+  }
+  function next(){ goTo(index+1); }
+  function prev(){ goTo(index===0 ? total-1 : index-1); }
+
+  function startAuto(){
+    autoTimer = setInterval(next, 3500);
+  }
+  function resetAuto(){
+    clearInterval(autoTimer);
+    startAuto();
+  }
+
+  /* Drag / swipe support (mouse + touch) */
+  let startX=0, currentX=0, dragging=false;
+
+  function dragStart(x){
+    dragging = true;
+    startX = x;
+    currentX = x;
+    slider.classList.add("dragging");
+    clearInterval(autoTimer);
+    track.style.transition = "none";
+  }
+  function dragMove(x){
+    if(!dragging) return;
+    currentX = x;
+    const diff = currentX - startX;
+    track.style.transform = `translateX(calc(-${index*100}% + ${diff}px))`;
+  }
+  function dragEnd(){
+    if(!dragging) return;
+    dragging = false;
+    slider.classList.remove("dragging");
+    const diff = currentX - startX;
+    if(diff < -50) next();
+    else if(diff > 50) prev();
+    else update(true);
+  }
+
+  slider.addEventListener("mousedown", e=> dragStart(e.clientX));
+  window.addEventListener("mousemove", e=> dragMove(e.clientX));
+  window.addEventListener("mouseup", dragEnd);
+
+  slider.addEventListener("touchstart", e=> dragStart(e.touches[0].clientX), {passive:true});
+  slider.addEventListener("touchmove", e=> dragMove(e.touches[0].clientX), {passive:true});
+  slider.addEventListener("touchend", dragEnd);
+
+  update(false);
+  startAuto();
+})();
+
+renderGrid();
+refreshCartBar();
+document.getElementById("cart-bar").classList.toggle("show", totalItems()>0);
+</script>
+<script type="module" src="assets/analytics.js"></script>
+</body>
+</html>
